@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Joaco Norelli - Catálogo de Anteojos</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header class="site-header">
+        <div class="container header-content">
+            <a href="index.html" class="logo logo-with-text">
+                <img src="http://localhost:5001/uploads/joaco-norelli-logo.png" alt="Icono Joaco Norelli" class="logo-icon-img">
+                <span class="logo-text-name">Joaco Norelli</span>
+            </a>
+            <nav class="main-nav" id="mainNav">
+                <ul>
+                    <li><a href="#hero" class="nav-link active">Inicio</a></li>
+                    <li><a href="#products-display-area" class="nav-link">Catálogo</a></li>
+                    <li><a href="#about" class="nav-link">Nosotros</a></li>
+                    <li><a href="login.html" class="admin-link">Admin</a></li>
+                </ul>
+            </nav>
+            <button class="menu-toggle" id="menuToggle" aria-label="Abrir menú" aria-expanded="false">☰</button>
+        </div>
+    </header>
+
+    <main>
+        <section id="hero" class="hero-section">
+            <div class="hero-overlay"></div>
+            <div class="container hero-text">
+                <h1>Diseño Único, Visión Clara.</h1>
+                <p>Descubre la colección exclusiva de anteojos por Joaco Norelli, creados con pasión y precisión.</p>
+                <a href="#products-display-area" class="btn btn-primary btn-hero">Explorar Catálogo</a>
+            </div>
+        </section>
+
+        <section id="products-display-area" class="products-section section-padding bg-light">
+            <div class="container">
+                <h2 class="section-title" id="productsAreaTitle">Nuestro Catálogo</h2>
+                 <div class="product-filters" id="productFiltersContainer" style="text-align: center; margin-bottom: 2.5rem;">
+                    <button class="btn btn-filter active" data-category-name="todos">Todos</button>
+                    
+                </div>
+                <div class="product-grid" id="productGrid">
+                    <p class="loading-message">Cargando productos...</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="about" class="about-section section-padding">
+            <div class="container about-content">
+                <div class="about-image">
+                    <img src="http://localhost:5001/uploads/joaco-norelli-logo.png" alt="Logo Joaco Norelli" class="about-logo-img">
+                </div>
+                <div class="about-text">
+                    <h2 class="section-title-left">Hechos a Mano, Con Alma.</h2>
+                    <p>Mi familia no sabia cuanto amor y fuerza tenia hasta que llegue yo a darles y pedirles todo.</p>
+                    <p>Soy joaco, un joven con sindrome de Down, lleno de ilusiones y proyectos.
+Hoy tengo este emprendimiento que me llena el alma, espero que estos anteojos te hagan ver la vida de la manera que la veo yo, te aseguro que te hara muy feliz!!!</p>
+                    <a href="#" class="btn btn-primary">Conoce Nuestra Historia</a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="site-footer-bottom">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-logo-text">Joaco Norelli</div>
+                <div class="footer-links">
+                    <a href="#">Política de Privacidad</a>
+                    <a href="#">Términos de Servicio</a>
+                    <a href="#">Contacto</a>
+                </div>
+                <div class="footer-social">
+                </div>
+            </div>
+            <p class="copyright">© 2024 Joaco Norelli. Todos los derechos reservados.</p>
+        </div>
+    </footer>
+
+    <!-- BOTONES FLOTANTES -->
+    <div class="floating-buttons-container">
+        <a href="https://www.instagram.com/joaconorellistore" target="_blank" rel="noopener noreferrer" class="floating-button instagram-float" aria-label="Síguenos en Instagram">
+            <i class="fab fa-instagram"></i>
+        </a>
+        <a href="https://wa.me/543815616132?text=Hola%20Joaco%2C%20quisiera%20hacer%20una%20consulta%20sobre%20tus%20anteojos." target="_blank" rel="noopener noreferrer" class="floating-button whatsapp-float" aria-label="Contáctanos por WhatsApp">
+            <i class="fab fa-whatsapp"></i>
+        </a>
+    </div>
+
+    <!-- MODAL DE DETALLE DE PRODUCTO -->
+    <div class="modal-overlay" id="productModalOverlay" style="display: none;"> 
+        <div class="modal-content" id="productModalContent"> 
+            <button class="modal-close-btn" id="productModalCloseBtn" aria-label="Cerrar modal">×</button>
+            <div id="productDetailContainer">
+                <p class="loading-message">Cargando detalles del producto...</p>
+            </div>
+        </div>
+    </div>
+    <!-- FIN MODAL -->
+
+    <script src="main.js"></script>
+</body>
+</html>
