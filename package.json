@@ -1,0 +1,13 @@
+{
+  "name": "catalogo-anteojos-frontend",
+  "version": "1.0.0",
+  "description": "Frontend para el catálogo de anteojos.",
+  "main": "index.html",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+
+  },
+  "author": "Tu Nombre",
+  "license": "ISC"
+
+}
