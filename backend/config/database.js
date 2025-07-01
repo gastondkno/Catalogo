@@ -1,29 +1,21 @@
 // backend/config/database.js
 const { Sequelize } = require('sequelize');
-const dotenv = require('dotenv');
+// const dotenv = require('dotenv'); // No lo necesitamos para esta prueba
+// dotenv.config();
 
-dotenv.config({ path: require('path').join(__dirname, '../.env') }); // Asegura que .env se lea desde la raíz del backend
+console.log("--- [DB_CONFIG] Cargando configuración de base de datos... ---");
 
 const sequelize = new Sequelize(
-    process.env.DB_NAME,
-    process.env.DB_USER,
-    process.env.DB_PASSWORD,
+    'anteojoscatalogodb_mysql', // DB Name
+    'root',                     // DB User
+    'tu_password_de_root_aqui', // <-- ¡PON AQUÍ TU CONTRASEÑA DE ROOT DE MYSQL!
     {
-        host: process.env.DB_HOST,
-        dialect: process.env.DB_DIALECT || 'mysql',
-        logging: (msg) => console.log(`[Sequelize] ${msg}`), // Log de SQL más informativo
-        // logging: false, // Para producción
-        pool: {
-            max: 5,
-            min: 0,
-            acquire: 30000,
-            idle: 10000
-        },
-        define: {
-            underscored: true, // Para que los nombres de columnas generados sean snake_case (ej. created_at)
-            timestamps: true   // Habilita createdAt y updatedAt por defecto
-        }
+        host: 'localhost',      // DB Host
+        dialect: 'mysql',
+        logging: console.log
     }
 );
+
+console.log("--- [DB_CONFIG] Instancia de Sequelize creada para DB: anteojoscatalogodb_mysql, Usuario: root ---");
 
 module.exports = sequelize;

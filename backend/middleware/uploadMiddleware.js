@@ -1,46 +1,46 @@
 // backend/middleware/uploadMiddleware.js
 const multer = require('multer');
 const path = require('path');
-const fs = require('fs');
 
-const UPLOADS_FOLDER_PATH = path.join(__dirname, '../uploads/');
-
-if (!fs.existsSync(UPLOADS_FOLDER_PATH)) {
-    try {
-        fs.mkdirSync(UPLOADS_FOLDER_PATH, { recursive: true });
-        console.log(`[uploadMiddleware] Directorio de subida CREADO en: ${UPLOADS_FOLDER_PATH}`);
-    } catch (err) {
-        console.error(`[uploadMiddleware] ERROR FATAL al crear directorio de subida ${UPLOADS_FOLDER_PATH}:`, err);
-    }
-} else {
-    console.log(`[uploadMiddleware] Directorio de subida ya existe: ${UPLOADS_FOLDER_PATH}`);
-}
-
+// Configuración de almacenamiento para Multer
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
-        cb(null, UPLOADS_FOLDER_PATH);
+        // La carpeta 'uploads' debe estar en la raíz de 'backend/'
+        // path.join con __dirname asegura que la ruta sea correcta sin importar desde donde se ejecute el script.
+        cb(null, path.join(__dirname, '../uploads/'));
     },
     filename: function (req, file, cb) {
-        const fieldName = file.fieldname || 'image';
-        cb(null, `${fieldName}-${Date.now()}${path.extname(file.originalname)}`);
+        // Crear un nombre de archivo único para evitar colisiones: producto-timestamp.extension
+        cb(null, `producto-${Date.now()}${path.extname(file.originalname)}`);
     }
 });
 
+// Función para verificar que el archivo subido sea una imagen
 function checkFileType(file, cb) {
+    // Tipos de archivo permitidos (expresión regular)
     const filetypes = /jpeg|jpg|png|gif|webp/;
+    // Comprobar la extensión del archivo
     const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+    // Comprobar el tipo MIME del archivo
     const mimetype = filetypes.test(file.mimetype);
-    if (mimetype && extname) { return cb(null, true); }
-    else {
-        console.error(`[uploadMiddleware] Tipo de archivo NO permitido: ${file.originalname}, mimetype: ${file.mimetype}`);
-        return cb(new Error('Error: ¡Solo se permiten imágenes (jpeg, jpg, png, gif, webp)!'), false);
+
+    if (mimetype && extname) {
+        // Si es una imagen válida, continuar
+        return cb(null, true);
+    } else {
+        // Si no, rechazar el archivo con un mensaje de error
+        cb(new Error('Error: ¡Solo se permiten archivos de imagen!'), false);
     }
 }
 
+// Inicializar y configurar Multer
 const upload = multer({
     storage: storage,
-    limits: { fileSize: 5 * 1024 * 1024 },
-    fileFilter: function (req, file, cb) { checkFileType(file, cb); }
+    limits: { fileSize: 20 * 1024 * 1024 }, // Límite de 20MB (para coincidir con nginx.conf)
+    fileFilter: function (req, file, cb) {
+        checkFileType(file, cb);
+    }
 });
 
+// Exportar la instancia de Multer configurada
 module.exports = upload;

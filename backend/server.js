@@ -5,59 +5,65 @@ const express = require('express');
 const dotenv = require('dotenv');
 const path = require('path');
 const cors = require('cors');
-const sequelize = require('./config/database'); // Tu instancia configurada de Sequelize
+const sequelize = require('./config/database');
 
-// --- Carga de Variables de Entorno ---
-dotenv.config(); // Asume que .env está en la raíz de backend/
+dotenv.config();
 
 // --- Importación de Modelos Sequelize ---
-// Asegúrate de que estos modelos existan y estén correctamente definidos para Sequelize
-const User = require('./models/UserModel'); 
+const User = require('./models/UserModel');
 const Category = require('./models/CategoryModel');
 const Product = require('./models/ProductModel');
 
-// Definir asociaciones (si no están ya en tus archivos de modelo o un archivo de index.js en models)
+// --- Definición de Asociaciones (Asegúrate de que existan en tus modelos) ---
 // Ejemplo:
 // Product.belongsTo(Category, { foreignKey: 'category_id', as: 'category' });
 // Category.hasMany(Product, { foreignKey: 'category_id', as: 'products' });
-// Es CRUCIAL que las asociaciones estén definidas ANTES de intentar sincronizar o hacer includes.
 
-// --- Crear Instancia de la Aplicación Express ---
+
 const app = express();
 
-// --- Middlewares Esenciales de Express ---
+// --- Middlewares Esenciales ---
+
+// 1. Configuración de CORS (SIMPLIFICADA)
+// Ahora que Nginx maneja las cabeceras CORS de forma estricta,
+// solo necesitamos habilitar el paquete 'cors' en su modo más simple en Node.js.
+// Esto asegura que las peticiones OPTIONS (preflight) sean manejadas correctamente
+// por la librería antes de que Nginx aplique las cabeceras finales.
 app.use(cors());
+
+// 2. Middlewares para Parsear el Cuerpo de la Petición
+// Estos son necesarios para que las rutas que reciben JSON (como login o crear categoría)
+// puedan leer el req.body. NO interfieren con busboy si se aplican globalmente
+// ANTES de las rutas.
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// --- Servir Archivos Estáticos (para imágenes) ---
-// Las imágenes se servirán desde la URL /uploads y se buscarán en la carpeta backend/uploads/
+// 3. Servir Archivos Estáticos
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// --- Lógica para Crear Usuario Administrador al Inicio (Opcional) ---
+// --- Lógica para Crear Usuario Administrador al Inicio ---
 const createAdminUser = async () => {
     if (!User) {
-        console.warn("[AdminInit] UserModel no está cargado. Omitiendo creación de admin.");
+        console.warn("UserModel no está cargado. Omitiendo creación de admin.");
         return;
     }
     try {
         const adminUsername = process.env.ADMIN_USERNAME || "admin";
-        const adminPassword = process.env.ADMIN_PASSWORD || "123"; // Esta contraseña será hasheada por el hook
-        const adminName = process.env.ADMIN_NAME || 'Admin Principal Joaco';
+        const adminPassword = process.env.ADMIN_PASSWORD || "joaco2025";
+        const adminName = process.env.ADMIN_NAME || 'Admin Principal';
 
-        // Buscamos por el campo 'email' donde guardaremos el username
         const adminExists = await User.findOne({ where: { email: adminUsername } });
 
         if (!adminExists) {
-            const newUser = await User.create({
+            await User.create({
                 name: adminName,
-                email: adminUsername, // Guardamos el 'username' en el campo 'email' de la BD
-                password_hash: adminPassword, // El hook 'beforeCreate' en UserModel se encarga del hasheo
+                email: adminUsername, // Se guarda 'username' en el campo 'email' de la DB
+                password_hash: adminPassword, // El hook en el modelo lo hashea
                 role: 'admin',
             });
-            console.log(`[AdminInit] Usuario administrador con username '${adminUsername}' CREADO con ID: ${newUser.user_id}`);
+            console.log(`[AdminInit] ¡Usuario administrador '${adminUsername}' CREADO EXITOSAMENTE!`);
         } else {
-            console.log(`[AdminInit] El usuario administrador con username '${adminUsername}' YA EXISTE con ID: ${adminExists.user_id}`);
+            console.log(`[AdminInit] El usuario administrador '${adminUsername}' ya existe.`);
         }
     } catch (error) {
         console.error('[AdminInit] ERROR al verificar/crear admin:', error.message);
@@ -69,30 +75,28 @@ async function initializeDatabaseAndStartServer() {
     let serverInstance = null;
     try {
         await sequelize.authenticate();
-        console.log(`CONEXIÓN A ${process.env.DB_DIALECT || 'MySQL'}: ¡Exitosa! DB: ${process.env.DB_NAME}`);
+        console.log('CONEXIÓN A MySQL: ¡Exitosa!');
 
-        // Sincronización de modelos: ¡USA CON PRECAUCIÓN!
-        // { force: true } BORRA y recrea tablas. PELIGROSO.
-        // { alter: true } Intenta modificar tablas para que coincidan. Puede ser útil en desarrollo.
-        // En producción, se suelen usar migraciones.
-        // await sequelize.sync({ alter: true }); // Descomenta solo si necesitas que Sequelize ajuste tus tablas
-        // console.log("Sincronización de modelos con la base de datos completada (si se ejecutó).");
+         await sequelize.sync({ alter: true });
+        console.log("Sincronización de modelos con la base de datos completada.");
 
-        await createAdminUser(); // Crear/verificar el usuario admin
+        await createAdminUser(); // Comenta esta línea si tu admin ya está creado y no quieres que se verifique cada vez.
 
-        // --- Importar y Usar Rutas de la API ---
-        const authRoutes = require('./routes/authRoutes'); // Para login
+        // Importar y Usar Rutas de la API
+        const authRoutes = require('./routes/authRoutes');
         const productRoutes = require('./routes/productRoutes');
         const categoryRoutes = require('./routes/categoryRoutes');
 
+        // Montaje de Rutas
         app.use('/api/auth', authRoutes);
         app.use('/api/products', productRoutes);
         app.use('/api/categories', categoryRoutes);
 
         app.get('/', (req, res) => {
-            res.send('API del Catálogo Joaco Norelli. Endpoints en /api/auth, /api/products, /api/categories.');
+            res.send('Bienvenido a la API del Catálogo de Anteojos.');
         });
 
+        // Iniciar el Servidor
         const PORT = process.env.PORT || 5001;
         serverInstance = app.listen(PORT, () => {
             console.log(
@@ -100,24 +104,25 @@ async function initializeDatabaseAndStartServer() {
             );
         });
 
+        // Manejo de Errores Globales del Proceso
         process.on('unhandledRejection', (err, promise) => {
-            console.error('UNHANDLED REJECTION! 💥 Cerrando servidor...', { name: err.name, message: err.message, promise });
+            console.error('UNHANDLED REJECTION! 💥 Cerrando servidor...', { error: err.name, message: err.message });
             if (serverInstance) serverInstance.close(() => process.exit(1)); else process.exit(1);
         });
         process.on('uncaughtException', (err) => {
-            console.error('UNCAUGHT EXCEPTION! 💥 Cerrando servidor...', { name: err.name, message: err.message });
-            console.error(err.stack);
+            console.error('UNCAUGHT EXCEPTION! 💥 Cerrando servidor...', err);
             if (serverInstance) serverInstance.close(() => process.exit(1)); else process.exit(1);
         });
 
     } catch (error) {
         console.error('FALLO CRÍTICO AL INICIAR LA APLICACIÓN:', error.name, error.message);
         if (error.original) {
-            console.error('Error Original (DB):', error.original.message, error.original);
+            console.error('Error Original (DB):', error.original.message, '(Code:', error.original.code, ')');
         }
         console.error(error.stack);
         process.exit(1);
     }
 }
 
+// Llamar a la función principal para iniciar todo el proceso
 initializeDatabaseAndStartServer();

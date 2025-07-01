@@ -144,6 +144,50 @@ img { max-width: 100%; height: auto; display: block; }
 .product-stock-status { font-size: 0.85rem; font-weight: 500; margin-bottom: 0.8rem; }
 .product-stock-status.out-of-stock { color: var(--error-color); }
 .product-stock-status.low-stock { color: #ff8c00; }
+/* --- ESTILOS PARA PESTAÑAS DEL PANEL ADMIN --- */
+.admin-tabs {
+    display: flex;
+    border-bottom: 2px solid #dee2e6;
+    margin-bottom: 2rem;
+}
+
+.tab-link {
+    padding: 0.8rem 1.5rem;
+    cursor: pointer;
+    background: none;
+    border: none;
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: var(--text-muted-color);
+    position: relative;
+    bottom: -2px; /* Alinea con el borde inferior */
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s ease-in-out;
+}
+
+.tab-link:hover {
+    color: var(--dark-color);
+}
+
+.tab-link.active {
+    color: var(--primary-color);
+    border-bottom-color: var(--primary-color);
+    font-weight: 600;
+}
+
+.tab-content {
+    display: none; /* Ocultar todas las pestañas por defecto */
+}
+
+.tab-content.active {
+    display: block; /* Mostrar solo la pestaña activa */
+    animation: fadeIn 0.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
 
 /* --- ABOUT SECTION --- */
 .about-content { display: grid; grid-template-columns: 1fr 1.2fr; gap: 3rem; align-items: center; }

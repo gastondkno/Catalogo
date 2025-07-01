@@ -3,18 +3,13 @@ const express = require('express');
 const router = express.Router();
 const productController = require('../controllers/productController');
 const { protect } = require('../middleware/authMiddleware');
-const upload = require('../middleware/uploadMiddleware');
 
-// --- Rutas Públicas ---
-router.get('/', productController.getPublicProducts);
-router.get('/:id', productController.getPublicProductById); // Esta es para el detalle público
+router.get('/', productController.getAllProducts);
+router.get('/:id', productController.getProductById);
 
-// --- Rutas Protegidas para el Administrador ---
-router.get('/admin/all', protect, productController.getAllProductsForAdmin); // Lista todos para admin
-router.get('/admin/:id', protect, productController.getAdminProductById); // <--- NUEVA RUTA PARA EDITAR
-
-router.post('/', protect, upload.single('image'), productController.createProduct);
-router.put('/:id', protect, upload.single('image'), productController.updateProduct); // Esta ruta se usa para actualizar, el ID es el del producto
+// Rutas de admin sin middleware de upload
+router.post('/', protect, productController.createProduct);
+router.put('/:id', protect, productController.updateProduct);
 router.delete('/:id', protect, productController.deleteProduct);
 
 module.exports = router;
