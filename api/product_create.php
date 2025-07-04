@@ -1,66 +1,89 @@
 <?php
-// api/product_create.php
-require 'db_connect.php';
+header("Access-Control-Allow-Origin: *");
+header("Content-Type: application/json; charset=UTF-8");
+header("Access-Control-Allow-Methods: POST");
+header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
 
-// Para ver errores detallados durante el desarrollo
-ini_set('display_errors', 1);
-error_reporting(E_ALL);
+include_once 'validate_token.php'; // Protegemos el endpoint
+include_once 'db_connect.php';
 
-// Validación de campos requeridos
-if (empty($_POST['name']) || !isset($_POST['price']) || empty($_POST['category_id'])) {
-    http_response_code(400); 
-    echo json_encode(['success' => false, 'message' => 'Nombre, precio y categoría son requeridos.']); 
-    exit();
-}
-if (!isset($_FILES['image']) || $_FILES['image']['error'] != 0) {
-    http_response_code(400); 
-    echo json_encode(['success' => false, 'message' => 'La imagen del producto es requerida.']); 
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    http_response_code(405);
+    echo json_encode(["success" => false, "message" => "Método no permitido."]);
     exit();
 }
 
-// --- Proceso de Subida de Imagen ---
-$target_dir = "../uploads/"; 
-if (!file_exists($target_dir)) { mkdir($target_dir, 0755, true); }
-
-$file_extension = strtolower(pathinfo($_FILES["image"]["name"], PATHINFO_EXTENSION));
-$new_filename = "product-" . time() . "-" . bin2hex(random_bytes(8)) . "." . $file_extension;
-$target_file = $target_dir . $new_filename;
-
-if (move_uploaded_file($_FILES["image"]["tmp_name"], $target_file)) {
-    $image_url = "/uploads/" . $new_filename;
-} else {
-    http_response_code(500);
-    echo json_encode(['success' => false, 'message' => 'Error al subir la imagen al servidor.']);
-    exit();
-}
-
-// --- Recopilar datos del formulario ---
-$name = htmlspecialchars(strip_tags($_POST['name']));
-$description = isset($_POST['description']) ? htmlspecialchars(strip_tags($_POST['description'])) : '';
-$price = floatval($_POST['price']);
-$category_id = intval($_POST['category_id']);
-$stock = isset($_POST['stock']) ? intval($_POST['stock']) : 0;
-$discount_percentage = isset($_POST['discount_percentage']) ? floatval($_POST['discount_percentage']) : 0.00;
-$is_active = isset($_POST['is_active']) && ($_POST['is_active'] === 'true' || $_POST['is_active'] === '1') ? 1 : 0;
+$conexion->beginTransaction();
 
 try {
-    $query = "INSERT INTO products 
-                (name, description, price, category_id, image_url, stock, discount_percentage, is_active) 
-              VALUES 
-                (?, ?, ?, ?, ?, ?, ?, ?)";
-              
-    $stmt = $pdo->prepare($query);
-    $stmt->execute([$name, $description, $price, $category_id, $image_url, $stock, $discount_percentage, $is_active]);
+    // Recibimos los datos con los nombres que envía el JS ('name', 'description', 'price')
+    $name = $_POST['name'] ?? '';
+    $description = $_POST['description'] ?? '';
+    $price = $_POST['price'] ?? 0;
+    $category_id = $_POST['category_id'] ?? null;
+    $stock = $_POST['stock'] ?? 0;
+    $discount_percentage = $_POST['discount_percentage'] ?? 0;
+    $is_active = isset($_POST['is_active']) && $_POST['is_active'] == '1' ? 1 : 0;
 
+    if (empty($name) || empty($category_id)) {
+        throw new Exception("El nombre y la categoría son obligatorios.");
+    }
+    
+    // ---- INICIO DE LA CORRECCIÓN ----
+    // Usamos los nombres de columna de la BD en el INSERT:
+    // nombre, descripcion, precio, etc.
+    $sql_producto = "INSERT INTO productos (nombre, descripcion, precio, category_id, stock, discount_percentage, is_active) VALUES (:name, :description, :price, :category_id, :stock, :discount_percentage, :is_active)";
+    // ---- FIN DE LA CORRECCIÓN ----
+
+    $stmt_producto = $conexion->prepare($sql_producto);
+    
+    // Vinculamos los datos recibidos a los placeholders de la consulta
+    $stmt_producto->bindParam(':name', $name);
+    $stmt_producto->bindParam(':description', $description);
+    $stmt_producto->bindParam(':price', $price);
+    $stmt_producto->bindParam(':category_id', $category_id);
+    $stmt_producto->bindParam(':stock', $stock);
+    $stmt_producto->bindParam(':discount_percentage', $discount_percentage);
+    $stmt_producto->bindParam(':is_active', $is_active, PDO::PARAM_INT);
+    $stmt_producto->execute();
+    
+    $idProducto = $conexion->lastInsertId();
+
+    if (isset($_FILES['images'])) {
+        $upload_dir = dirname(__DIR__) . '/uploads/';
+        if (!is_dir($upload_dir)) mkdir($upload_dir, 0755, true);
+
+        foreach ($_FILES['images']['tmp_name'] as $key => $tmp_name) {
+            if ($_FILES['images']['error'][$key] === UPLOAD_ERR_OK) {
+                $file_name = $_FILES['images']['name'][$key];
+                $file_tmp = $_FILES['images']['tmp_name'][$key];
+                $extension = strtolower(pathinfo($file_name, PATHINFO_EXTENSION));
+                $allowed_extensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+
+                if (in_array($extension, $allowed_extensions)) {
+                    $unique_name = 'prod_' . $idProducto . '_' . uniqid() . '.' . $extension;
+                    $destination = $upload_dir . $unique_name;
+
+                    if (move_uploaded_file($file_tmp, $destination)) {
+                        $sql_imagen = "INSERT INTO producto_imagenes (id_producto, nombre_archivo, orden) VALUES (:id_producto, :nombre_archivo, :orden)";
+                        $stmt_imagen = $conexion->prepare($sql_imagen);
+                        $stmt_imagen->bindParam(':id_producto', $idProducto);
+                        $stmt_imagen->bindParam(':nombre_archivo', $unique_name);
+                        $stmt_imagen->bindParam(':orden', $key);
+                        $stmt_imagen->execute();
+                    }
+                }
+            }
+        }
+    }
+
+    $conexion->commit();
     http_response_code(201);
-    echo json_encode(['success' => true, 'message' => 'Producto creado exitosamente.', 'id' => $pdo->lastInsertId()]);
+    echo json_encode(["success" => true, "message" => "Producto agregado exitosamente."]);
 
-} catch (\PDOException $e) {
+} catch (Exception $e) {
+    $conexion->rollBack();
     http_response_code(500);
-    echo json_encode([
-        'success' => false, 
-        'message' => 'Error al ejecutar la consulta SQL para crear el producto.', 
-        'error_details' => $e->getMessage()
-    ]);
+    echo json_encode(["success" => false, "message" => "No se pudo crear el producto: " . $e->getMessage()]);
 }
 ?>

@@ -1,5 +1,8 @@
 <?php
-require 'db_connect.php';
+// ¡AÑADIR ESTA LÍNEA AL PRINCIPIO!
+include_once 'validate_token.php';
+
+include_once 'db_connect.php';;
 
 $id = isset($_GET['id']) ? intval($_GET['id']) : 0;
 

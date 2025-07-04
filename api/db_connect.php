@@ -1,29 +1,47 @@
 <?php
-// api/db_connect.php
 
-// ... (tu configuración de conexión a la base de datos se queda igual) ...
-$host = "localhost";
-$db_name = "u329120676_Anteojos";
-$username = "u329120676_gaston";
-$password = "37311650.Gaston";
-$charset = "utf8mb4";
+// --- INICIO: BLOQUE DE CONFIGURACIÓN DE ERRORES (AÑADIR ESTO) ---
+// En un entorno de desarrollo, podrías mostrar errores.
+// ini_set('display_errors', 1);
+// ini_set('display_startup_errors', 1);
+// error_reporting(E_ALL);
 
-// --- Headers para la Respuesta de la API ---
-// AHORA el origen es el mismo, pero es buena práctica mantener los headers
-// por si en el futuro quieres llamar a tu API desde otro sitio.
-header("Access-Control-Allow-Origin: *"); // Permitir desde cualquier origen es lo más simple para debug
-header("Content-Type: application/json; charset=UTF-8");
-header("Access-Control-Allow-Methods: POST, GET, PUT, DELETE, OPTIONS");
-header("Access-Control-Max-Age: 3600");
-header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
+// En un entorno de producción (como Hostinger), es mejor ocultarlos y loguearlos.
+ini_set('display_errors', 0);
+ini_set('log_errors', 1);
+// Opcional: define un archivo de log personalizado si quieres
+// ini_set('error_log', dirname(__DIR__) . '/php-errors.log');
+error_reporting(E_ALL);
+// --- FIN: BLOQUE DE CONFIGURACIÓN DE ERRORES ---
 
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    http_response_code(200);
+
+// Nombre de host, generalmente 'localhost' en Hostinger
+$host = "localhost"; 
+
+// El nombre COMPLETO de tu base de datos
+$bd = "u329120676_catalogo_digit"; 
+
+// El usuario que creaste para esa base de datos
+$usuario = "u329120676_joaco"; // O el nombre completo con prefijo si lo tiene
+
+// La contraseña que definiste para ese usuario al crearlo
+$contrasenia = "37311650.Gaston"; 
+
+try {
+    // No cambies esta línea
+    $conexion = new PDO("mysql:host=$host;dbname=$bd", $usuario, $contrasenia, [
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC, // Buena práctica
+        PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES 'utf8mb4'" // Asegurar UTF-8
+    ]);
+
+} catch (PDOException $ex) {
+    // Si la conexión a la BD falla, debemos enviar una respuesta JSON también
+    http_response_code(503); // Service Unavailable
+    echo json_encode([
+        "success" => false,
+        "message" => "Error de conexión a la base de datos. Por favor, intente más tarde."
+    ]);
     exit();
 }
-// ... (tu código de conexión con try/catch se queda igual) ...
-try {
-    $options = [ /* ... tus opciones de PDO ... */ ];
-    $pdo = new PDO("mysql:host=$host;dbname=$db_name;charset=$charset", $username, $password, $options);
-} catch (\PDOException $e) { /* ... tu manejo de error de conexión ... */ }
 ?>
